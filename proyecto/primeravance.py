@@ -168,3 +168,62 @@ def guardar_imagen_huella(filename):
         pixeldata[x, y] = (int(result[i]) >> 4) * 17
         x += 1
         pixeldata[x, y] = (int(result[i]) & mask)
+
+
+def obtener_numero(max_number):
+    """Utiliza input() para obtener un número válido de 0 al tamaño máximo
+    de la librería. Reintentar hasta tener éxito!"""
+    i = -1
+    while (i > max_number - 1) or (i < 0):
+        try:
+            i = int(input("Ingrese el ID # de 0 a {}: ".format(max_number - 1)))
+        except ValueError:
+            pass
+    return i
+
+
+while True:
+    print("----------------")
+    if finger.read_templates() != adafruit_fingerprint.OK:
+        raise RuntimeError("No se pudieron leer las plantillas")
+    print("Plantillas de huella: ", finger.templates)
+    if finger.count_templates() != adafruit_fingerprint.OK:
+        raise RuntimeError("No se pudieron leer las plantillas")
+    print("Número de plantillas encontradas: ", finger.template_count)
+    if finger.read_sysparam() != adafruit_fingerprint.OK:
+        raise RuntimeError("No se pudieron obtener los parámetros del sistema")
+    print("Tamaño de la librería de plantillas: ", finger.library_size)
+    print("e) inscribir huella")
+    print("f) encontrar huella")
+    print("d) eliminar huella")
+    print("s) guardar imagen de huella")
+    print("r) reiniciar librería")
+    print("q) salir")
+    print("----------------")
+    c = input("> ")
+
+    if c == "e":
+        inscribir_huella(obtener_numero(finger.library_size))
+    if c == "f":
+        if obtener_huella():
+            print("Detectada #", finger.finger_id, "con confianza", finger.confidence)
+        else:
+            print("Huella no encontrada")
+    if c == "d":
+        if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
+            print("¡Eliminada!")
+        else:
+            print("Error al eliminar")
+    if c == "s":
+        if guardar_imagen_huella("huella.png"):
+            print("Imagen de huella guardada")
+        else:
+            print("Error al guardar la imagen de la huella")
+    if c == "r":
+        if finger.empty_library() == adafruit_fingerprint.OK:
+            print("¡Librería vacía!")
+        else:
+            print("Error al vaciar la librería")
+    if c == "q":
+        print("Saliendo del programa de ejemplo de huella digital")
+        raise SystemExit
