@@ -196,56 +196,57 @@ def obtener_numero(max_number):
     return i
 
 
-while True:
-    print("----------------")
-    if finger.read_templates() != adafruit_fingerprint.OK:
-        raise RuntimeError("No se pudieron leer las plantillas")
-    print("Plantillas de huella: ", finger.templates)
-    if finger.count_templates() != adafruit_fingerprint.OK:
-        raise RuntimeError("No se pudieron leer las plantillas")
-    print("Número de plantillas encontradas: ", finger.template_count)
-    if finger.read_sysparam() != adafruit_fingerprint.OK:
-        raise RuntimeError("No se pudieron obtener los parámetros del sistema")
-    print("Tamaño de la librería de plantillas: ", finger.library_size)
-    print("a) inscribir huella")#Up
-    print("b) Entrar por huella")#Down
-    print("c) eliminar huella")#Left
-    print("d) guardar imagen de huella")#Right
-    print("e) reiniciar librería")
-    print("f) salir")
-    print("----------------")
-    bd = BlueDot()
-    c = input("> ")
-
-    if c == "a":
+def dpad(pos):
+    
+    if pos.top:
         inscribir_huella(obtener_numero(finger.library_size))
-    if c == "b":
+    elif pos.bottom:
         if obtener_huella():
             print("Detectada #", finger.finger_id, "con confianza", finger.confidence)
             led_verde.on()  # Enciende el LED verde
             time.sleep(2)   # Espera 2 segundos
             led_verde.off() # Apaga el LED verde
-            
+
         else:
             print("Huella no encontrada")
             led_rojo.on()   # Enciende el LED rojo
             time.sleep(2)   # Espera 2 segundos
             led_rojo.off()  # Apaga el LED rojo
-    if c == "c":
+    elif pos.left:
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
             print("¡Eliminada!")
         else:
             print("Error al eliminar")
-    if c == "d":
-        if guardar_imagen_huella("huella.png"):
-            print("Imagen de huella guardada")
-        else:
-            print("Error al guardar la imagen de la huella")
-    if c == "e":
+    elif pos.right:
         if finger.empty_library() == adafruit_fingerprint.OK:
             print("¡Librería vacía!")
         else:
             print("Error al vaciar la librería")
-    if c == "f":
-        print("Saliendo del programa de ejemplo de huella digital")
+    elif pos.middle:
+        print("Saliendo del proyecto")
         raise SystemExit
+
+
+print("Esperando entrada...")
+bd = BlueDot()
+
+bd.when_pressed = dpad
+
+print("----------------")
+if finger.read_templates() != adafruit_fingerprint.OK:
+    raise RuntimeError("No se pudieron leer las plantillas")
+print("Plantillas de huella: ", finger.templates)
+if finger.count_templates() != adafruit_fingerprint.OK:
+    raise RuntimeError("No se pudieron leer las plantillas")
+print("Número de plantillas encontradas: ", finger.template_count)
+if finger.read_sysparam() != adafruit_fingerprint.OK:
+    raise RuntimeError("No se pudieron obtener los parámetros del sistema")
+print("Tamaño de la librería de plantillas: ", finger.library_size)
+print("UP) inscribir huella")#Up
+print("BOTTOM) Entrar por huella")#Down
+print("LEFT) eliminar huella")#Left
+#print("d) guardar imagen de huella")#Right
+print("RIGHT) reiniciar librería")
+print("MIDDLE) salir")
+print("----------------")
+pause()
