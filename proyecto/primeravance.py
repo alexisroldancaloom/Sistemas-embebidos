@@ -1,6 +1,8 @@
 import time
 import serial
 from gpiozero import LED
+from bluedot import BlueDot
+from signal import pause
 
 import adafruit_fingerprint
 
@@ -11,6 +13,12 @@ uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
 
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
+# Define la secuencia que se debe seguir
+secuencia_correcta = ["up", "down", "left", "right"]
+
+# Inicializa la lista que almacenará las entradas del usuario
+entradas_usuario = []
+bd = BlueDot()
 ##################################################
 
 
@@ -193,6 +201,26 @@ def obtener_numero(max_number):
             pass
     return i
 
+# Función para verificar la secuencia
+def verificar_secuencia(pos):
+    # Agrega la posición actual a las entradas del usuario
+    entradas_usuario.append(pos)
+
+    # Verifica si la secuencia del usuario coincide con la secuencia correcta
+    if entradas_usuario == secuencia_correcta:
+        print("¡Acceso concedido!")
+        # Limpia las entradas del usuario para el próximo intento
+        led_verde.on()  # Enciende el LED verde
+        time.sleep(2)   # Espera 2 segundos
+        led_verde.off() # Apaga el LED verde
+            
+        entradas_usuario.clear()
+    else:
+        print("Secuencia incorrecta")
+        led_rojo.on()   # Enciende el LED rojo
+        time.sleep(2)   # Espera 2 segundos
+        led_rojo.off()  # Apaga el LED rojo
+
 
 while True:
     print("----------------")
@@ -205,18 +233,19 @@ while True:
     if finger.read_sysparam() != adafruit_fingerprint.OK:
         raise RuntimeError("No se pudieron obtener los parámetros del sistema")
     print("Tamaño de la librería de plantillas: ", finger.library_size)
-    print("e) inscribir huella")
-    print("f) encontrar huella")
+    print("a) inscribir huella")
+    print("b) Entrar por huella")
+    print("c) Entrar por clave")
     print("d) eliminar huella")
-    print("s) guardar imagen de huella")
-    print("r) reiniciar librería")
-    print("q) salir")
+    print("e) guardar imagen de huella")
+    print("f) reiniciar librería")
+    print("g) salir")
     print("----------------")
     c = input("> ")
 
-    if c == "e":
+    if c == "a":
         inscribir_huella(obtener_numero(finger.library_size))
-    if c == "f":
+    if c == "b":
         if obtener_huella():
             print("Detectada #", finger.finger_id, "con confianza", finger.confidence)
             led_verde.on()  # Enciende el LED verde
@@ -228,21 +257,23 @@ while True:
             led_rojo.on()   # Enciende el LED rojo
             time.sleep(2)   # Espera 2 segundos
             led_rojo.off()  # Apaga el LED rojo
+    if c == "c":
+        bd.when_pressed = verificar_secuencia
     if c == "d":
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
             print("¡Eliminada!")
         else:
             print("Error al eliminar")
-    if c == "s":
+    if c == "e":
         if guardar_imagen_huella("huella.png"):
             print("Imagen de huella guardada")
         else:
             print("Error al guardar la imagen de la huella")
-    if c == "r":
+    if c == "f":
         if finger.empty_library() == adafruit_fingerprint.OK:
             print("¡Librería vacía!")
         else:
             print("Error al vaciar la librería")
-    if c == "q":
+    if c == "g":
         print("Saliendo del programa de ejemplo de huella digital")
         raise SystemExit
