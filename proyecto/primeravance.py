@@ -1,7 +1,11 @@
 import time
 import serial
+from gpiozero import LED
 
 import adafruit_fingerprint
+
+led_verde = LED(17)
+led_rojo = LED(27)
 
 uart = serial.Serial("/dev/ttyAMA0", baudrate=57600, timeout=1)
 
@@ -32,6 +36,7 @@ def obtener_detalle_huella():
     i = finger.get_image()
     if i == adafruit_fingerprint.OK:
         print("Huella tomada")
+
     else:
         if i == adafruit_fingerprint.NOFINGER:
             print("No se detectó la Huella")
@@ -84,11 +89,17 @@ def inscribir_huella(location):
             i = finger.get_image()
             if i == adafruit_fingerprint.OK:
                 print("Huella tomada")
+                led_verde.on()  # Enciende el LED verde
+                time.sleep(2)   # Espera 2 segundos
+                led_verde.off() # Apaga el LED verde
                 break
             if i == adafruit_fingerprint.NOFINGER:
                 print(".", end="")
             elif i == adafruit_fingerprint.IMAGEFAIL:
                 print("Error de Huella")
+                led_rojo.on()   # Enciende el LED rojo
+                time.sleep(2)   # Espera 2 segundos
+                led_rojo.off()  # Apaga el LED rojo
                 return False
             else:
                 print("Otro error")
@@ -207,8 +218,15 @@ while True:
     if c == "f":
         if obtener_huella():
             print("Detectada #", finger.finger_id, "con confianza", finger.confidence)
+            led_verde.on()  # Enciende el LED verde
+            time.sleep(2)   # Espera 2 segundos
+            led_verde.off() # Apaga el LED verde
+            
         else:
             print("Huella no encontrada")
+            led_rojo.on()   # Enciende el LED rojo
+            time.sleep(2)   # Espera 2 segundos
+            led_rojo.off()  # Apaga el LED rojo
     if c == "d":
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
             print("¡Eliminada!")
