@@ -209,8 +209,11 @@ def obtener_numero(max_number):
 
 # Función para verificar la secuencia
 def verificar_secuencia(pos):
+    # Obtiene la dirección actual como string
+    direccion = str(pos)
+
     # Agrega la posición actual a las entradas del usuario
-    entradas_usuario.append(pos)
+    entradas_usuario.append(direccion)
 
     # Verifica si la secuencia ingresada hasta el momento coincide con el prefijo de la secuencia correcta
     if entradas_usuario == secuencia_correcta[:len(entradas_usuario)]:
