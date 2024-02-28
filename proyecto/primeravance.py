@@ -264,8 +264,12 @@ while True:
         bd.when_pressed = verificar_secuencia
 
         # Nos mantenemos en un bucle hasta que la verificación de la secuencia haya terminado
-        while len(entradas_usuario) < len(secuencia_correcta):
+        while True:
+            # Esperamos a que la longitud de las entradas del usuario sea igual a la longitud de la secuencia correcta
+            if len(entradas_usuario) == len(secuencia_correcta):
+                break
             time.sleep(0.1)  # Esperamos un poco para evitar un uso excesivo de la CPU
+
     if c == "d":
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
             print("¡Eliminada!")
