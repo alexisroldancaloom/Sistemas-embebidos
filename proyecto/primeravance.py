@@ -208,25 +208,39 @@ def obtener_numero(max_number):
     return i
 
 # Función para verificar la secuencia
+# Función para verificar la secuencia
 def verificar_secuencia(pos):
     # Agrega la posición actual a las entradas del usuario
-    entradas_usuario.append(pos.value)  # Accede al atributo value
+    x, y = pos.x, pos.y
+    
+    # Determina la dirección según la posición
+    if x > 0 and y > 0:
+        direccion = "up"
+    elif x < 0 and y > 0:
+        direccion = "down"
+    elif x > 0 and y < 0:
+        direccion = "left"
+    elif x < 0 and y < 0:
+        direccion = "right"
+
+    entradas_usuario.append(direccion)
 
     if entradas_usuario == secuencia_correcta[:len(entradas_usuario)]:
         # La secuencia ingresada hasta el momento coincide con el prefijo de la secuencia correcta
         # Esperamos a que se complete la secuencia
         if len(entradas_usuario) == len(secuencia_correcta):
             # La secuencia ingresada coincide con la secuencia correcta
-            print("¡Acceso concedido! Se presionó {} correctamente.".format(direcciones[pos.value]))  # Accede al atributo value
+            print("¡Acceso concedido! Secuencia correcta: ", [direcciones[d] for d in entradas_usuario])
             # Limpia las entradas del usuario para el próximo intento
             entradas_usuario.clear()
     else:
         # La secuencia ingresada no coincide con el prefijo de la secuencia correcta
-        print("Secuencia incorrecta. Se presionó {}.".format(direcciones[pos.value]))  # Accede al atributo value
+        print("Secuencia incorrecta. Secuencia ingresada: ", [direcciones[d] for d in entradas_usuario])
         led_rojo.on()
         time.sleep(2)
         led_rojo.off()
         entradas_usuario.clear()
+
 
 
 while True:
