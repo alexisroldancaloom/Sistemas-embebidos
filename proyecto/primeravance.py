@@ -258,7 +258,14 @@ while True:
             time.sleep(2)   # Espera 2 segundos
             led_rojo.off()  # Apaga el LED rojo
     if c == "c":
+    # Limpiamos las entradas del usuario para la nueva secuencia
+        entradas_usuario.clear()
+        print("Ingrese la secuencia de la contraseña usando el Bluedot.")
         bd.when_pressed = verificar_secuencia
+
+        # Nos mantenemos en un bucle hasta que la verificación de la secuencia haya terminado
+        while len(entradas_usuario) < len(secuencia_correcta):
+            time.sleep(0.1)  # Esperamos un poco para evitar un uso excesivo de la CPU
     if c == "d":
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
             print("¡Eliminada!")
