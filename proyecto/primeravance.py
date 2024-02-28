@@ -1,3 +1,4 @@
+import os
 import time
 import serial
 from gpiozero import LED
@@ -229,10 +230,6 @@ def dpad(pos):
         print("Saliendo del proyecto")
         raise SystemExit
 
-def wait_and_clear():
-    time.sleep(3)
-    clear_console()
-
 def clear_console():
     # Función para limpiar la consola
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -261,10 +258,11 @@ def wait_and_clear():
     clear_console()
     show_menu()
 
-print("Esperando entrada...")
+show_menu()
 bd = BlueDot()
 
 bd.when_pressed = dpad
+
 
 
 print("----------------")
