@@ -264,7 +264,7 @@ while True:
             led_rojo.on()   # Enciende el LED rojo
             time.sleep(2)   # Espera 2 segundos
             led_rojo.off()  # Apaga el LED rojo
-    if opcion == "c":
+    if c == "c":
     # Limpiamos las entradas del usuario para la nueva secuencia
         entradas_usuario.clear()
         print("Ingrese la secuencia de la contraseña usando el Bluedot.")
