@@ -7,7 +7,7 @@ import adafruit_fingerprint
 led_verde = LED(17)
 led_rojo = LED(27)
 
-uart = serial.Serial("/dev/ttyAMA0", baudrate=57600, timeout=1)
+uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
 
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
@@ -78,7 +78,7 @@ def obtener_detalle_huella():
 
 # pylint: disable=too-many-statements
 def inscribir_huella(location):
-    # Toma 2 imágenes de la huella y las templatea, luego las almacena en 'location
+    # Toma 2 imágenes de la huella y las templatea, luego las almacena en 'location'
     for fingerimg in range(1, 3):
         if fingerimg == 1:
             print("Coloque el dedo en el sensor...", end="")
@@ -90,8 +90,6 @@ def inscribir_huella(location):
             if i == adafruit_fingerprint.OK:
                 print("Huella tomada")
                 led_verde.on()  # Enciende el LED verde
-                time.sleep(2)   # Espera 2 segundos
-                led_verde.off() # Apaga el LED verde
                 break
             if i == adafruit_fingerprint.NOFINGER:
                 print(".", end="")
@@ -149,6 +147,9 @@ def inscribir_huella(location):
         else:
             print("Otro error")
         return False
+
+    # Apagar el LED verde después de que el proceso de inscripción ha finalizado
+    led_verde.off()
 
     return True
 
