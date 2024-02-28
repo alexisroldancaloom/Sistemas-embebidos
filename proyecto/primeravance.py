@@ -4,7 +4,6 @@ import serial
 from gpiozero import LED
 from bluedot import BlueDot
 from signal import pause
-
 import adafruit_fingerprint
 
 led_verde = LED(17)
@@ -14,11 +13,7 @@ uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
 
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
-##################################################
-
-
 def obtener_huella():
-    # Obtiene una imagen de la huella, la templatea y verifica si coincide
     print("Esperando imagen...")
     while finger.get_image() != adafruit_fingerprint.OK:
         pass
@@ -30,16 +25,11 @@ def obtener_huella():
         return False
     return True
 
-
-# pylint: disable=too-many-branches
 def obtener_detalle_huella():
-    # Obtiene una imagen de la huella, la templatea y verifica si coincide.
-    # Esta vez, imprime cada error en lugar de simplemente regresar en caso de fallo
     print("Obteniendo Huella...", end="")
     i = finger.get_image()
     if i == adafruit_fingerprint.OK:
         print("Huella tomada")
-
     else:
         if i == adafruit_fingerprint.NOFINGER:
             print("No se detectó la Huella")
@@ -66,8 +56,6 @@ def obtener_detalle_huella():
 
     print("Buscando...", end="")
     i = finger.finger_fast_search()
-    # pylint: disable=no-else-return
-    # Este bloque necesita ser refactorizado cuando se pueda probar.
     if i == adafruit_fingerprint.OK:
         print("¡Huella encontrada!")
         return True
@@ -78,10 +66,7 @@ def obtener_detalle_huella():
             print("Otro error")
         return False
 
-
-# pylint: disable=too-many-statements
 def inscribir_huella(location):
-    # Toma 2 imágenes de la huella y las templatea, luego las almacena en 'location'
     for fingerimg in range(1, 3):
         if fingerimg == 1:
             print("Coloque el dedo en el sensor...", end="")
@@ -92,15 +77,15 @@ def inscribir_huella(location):
             i = finger.get_image()
             if i == adafruit_fingerprint.OK:
                 print("Huella tomada")
-                led_verde.on()  # Enciende el LED verde
+                led_verde.on()
                 break
             if i == adafruit_fingerprint.NOFINGER:
                 print(".", end="")
             elif i == adafruit_fingerprint.IMAGEFAIL:
                 print("Error de Huella")
-                led_rojo.on()   # Enciende el LED rojo
-                time.sleep(2)   # Espera 2 segundos
-                led_rojo.off()  # Apaga el LED rojo
+                led_rojo.on()
+                time.sleep(2)
+                led_rojo.off()
                 return False
             else:
                 print("Otro error")
@@ -151,43 +136,25 @@ def inscribir_huella(location):
             print("Otro error")
         return False
 
-    # Apagar el LED verde después de que el proceso de inscripción ha finalizado
     led_verde.off()
-
     return True
 
-
 def guardar_imagen_huella(filename):
-    # Escanea la huella y luego guarda la imagen en filename
     while finger.get_image():
         pass
-
-    # deja que PIL se encargue de los encabezados de la imagen y la estructura del archivo
-    from PIL import Image  # pylint: disable=import-outside-toplevel
-
+    from PIL import Image
     img = Image.new("L", (256, 288), "white")
     pixeldata = img.load()
     mask = 0b00001111
     result = finger.get_fpdata(sensorbuffer="image")
-
-    # este bloque "desempaqueta" los datos recibidos del módulo de huella digital
-    #   luego copia los datos de la imagen al placeholder de imagen "img"
-    #   píxel por píxel.  por favor refiérase a la sección 4.2.1 del manual para
-    #   más detalles.  gracias a Bastian Raschke y Danylo Esterman.
-    # pylint: disable=invalid-name
     x = 0
-    # pylint: disable=invalid-name
     y = 0
-    # pylint: disable=consider-using-enumerate
     for i in range(len(result)):
         pixeldata[x, y] = (int(result[i]) >> 4) * 17
         x += 1
         pixeldata[x, y] = (int(result[i]) & mask)
 
-
 def obtener_numero(max_number):
-    """Utiliza input() para obtener un número válido de 0 al tamaño máximo
-    de la librería. Reintentar hasta tener éxito!"""
     i = -1
     while (i > max_number - 1) or (i < 0):
         try:
@@ -196,7 +163,6 @@ def obtener_numero(max_number):
             pass
     return i
 
-
 def dpad(pos):
     if pos.top:
         inscribir_huella(obtener_numero(finger.library_size))
@@ -204,15 +170,14 @@ def dpad(pos):
     elif pos.bottom:
         if obtener_huella():
             print("Detectada #", finger.finger_id, "con confianza", finger.confidence)
-            led_verde.on()  # Enciende el LED verde
-            time.sleep(2)   # Espera 2 segundos
-            led_verde.off() # Apaga el LED verde
-
+            led_verde.on()
+            time.sleep(2)
+            led_verde.off()
         else:
             print("Huella no encontrada")
-            led_rojo.on()   # Enciende el LED rojo
-            time.sleep(2)   # Espera 2 segundos
-            led_rojo.off()  # Apaga el LED rojo
+            led_rojo.on()
+            time.sleep(2)
+            led_rojo.off()
         wait_and_clear()
     elif pos.left:
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
@@ -231,7 +196,6 @@ def dpad(pos):
         raise SystemExit
 
 def clear_console():
-    # Función para limpiar la consola
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def show_menu():
@@ -246,10 +210,9 @@ def show_menu():
     if finger.read_sysparam() != adafruit_fingerprint.OK:
         raise RuntimeError("No se pudieron obtener los parámetros del sistema")
     print("Tamaño de la librería de plantillas: ", finger.library_size)
-    print("UP) inscribir huella")#Up
-    print("BOTTOM) Entrar por huella")#Down
-    print("LEFT) eliminar huella")#Left
-    #print("d) guardar imagen de huella")#Right
+    print("UP) inscribir huella")
+    print("BOTTOM) Entrar por huella")
+    print("LEFT) eliminar huella")
     print("RIGHT) reiniciar librería")
     print("MIDDLE) salir")
 
@@ -262,8 +225,6 @@ show_menu()
 bd = BlueDot()
 
 bd.when_pressed = dpad
-
-
 
 print("----------------")
 pause()
