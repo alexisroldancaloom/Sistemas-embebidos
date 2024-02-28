@@ -13,18 +13,6 @@ uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
 
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
-# Define la secuencia que se debe seguir
-secuencia_correcta = ["up", "down", "left", "right"]
-direcciones = {
-    "up": "arriba",
-    "down": "abajo",
-    "left": "izquierda",
-    "right": "derecha",
-}
-
-# Inicializa la lista que almacenará las entradas del usuario
-entradas_usuario = []
-bd = BlueDot()
 ##################################################
 
 
@@ -207,45 +195,6 @@ def obtener_numero(max_number):
             pass
     return i
 
-# Función para verificar la secuencia
-def verificar_secuencia(pos):
-    # Agrega la posición actual a las entradas del usuario
-    x, y = pos.x, pos.y
-    
-    # Define una dirección por defecto
-    direccion = None
-
-    # Determina la dirección según la posición
-    if x > 0 and y > 0:
-        direccion = "up"
-    elif x < 0 and y > 0:
-        direccion = "down"
-    elif x > 0 and y < 0:
-        direccion = "left"
-    elif x < 0 and y < 0:
-        direccion = "right"
-
-    # Verifica si la dirección se ha definido
-    if direccion is not None:
-        entradas_usuario.append(direccion)
-
-        if entradas_usuario == secuencia_correcta[:len(entradas_usuario)]:
-            # La secuencia ingresada hasta el momento coincide con el prefijo de la secuencia correcta
-            # Esperamos a que se complete la secuencia
-            if len(entradas_usuario) == len(secuencia_correcta):
-                # La secuencia ingresada coincide con la secuencia correcta
-                print("¡Acceso concedido! Secuencia correcta: ", [direcciones[d] for d in entradas_usuario])
-                # Limpia las entradas del usuario para el próximo intento
-                entradas_usuario.clear()
-        else:
-            # La secuencia ingresada no coincide con el prefijo de la secuencia correcta
-            print("Secuencia incorrecta. Secuencia ingresada: ", [direcciones[d] for d in entradas_usuario])
-            led_rojo.on()
-            time.sleep(2)
-            led_rojo.off()
-            entradas_usuario.clear()
-
-
 
 while True:
     print("----------------")
@@ -258,14 +207,85 @@ while True:
     if finger.read_sysparam() != adafruit_fingerprint.OK:
         raise RuntimeError("No se pudieron obtener los parámetros del sistema")
     print("Tamaño de la librería de plantillas: ", finger.library_size)
-    print("a) inscribir huella")
-    print("b) Entrar por huella")
-    print("c) Entrar por clave")
-    print("d) eliminar huella")
-    print("e) guardar imagen de huella")
-    print("f) reiniciar librería")
-    print("g) salir")
+    print("a) inscribir huella")#Up
+    print("b) Entrar por huella")#Down
+    print("c) eliminar huella")#Left
+    print("d) guardar imagen de huella")#Right
+    print("e) reiniciar librería")
+    print("f) salir")
     print("----------------")
+
+    bd = BlueDot()
+
+    # Espera hasta que se detecte algún evento de Bluedot
+    while not bd.wait_for_press():
+        pass
+
+    # Espera a que se libere el Bluedot
+    while bd.is_pressed:
+        pass
+
+    # Traducir los movimientos del Bluedot a opciones del menú
+    if bd.up:
+        c = "a"  # Inscribir huella
+    elif bd.down:
+        c = "b"  # Entrar por huella
+    elif bd.left:
+        c = "c"  # Eliminar huella
+    elif bd.right:
+        c = "d"  # Guardar imagen de huella
+    else:
+        c = input("> ")
+
+    if c == "a":
+        inscribir_huella(obtener_numero(finger.library_size))
+    if c == "b":
+        if obtener_huella():
+            print("Detectada #", finger.finger_id, "con confianza", finger.confidence)
+            led_verde.on()  # Enciende el LED verde
+            time.sleep(2)   # Espera 2 segundos
+            led_verde.off() # Apaga el LED verde
+        else:
+            print("Huella no encontrada")
+            led_rojo.on()   # Enciende el LED rojo
+            time.sleep(2)   # Espera 2 segundos
+            led_rojo.off()  # Apaga el LED rojo
+    if c == "c":
+        if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
+            print("¡Eliminada!")
+        else:
+            print("Error al eliminar")
+    if c == "d":
+        if guardar_imagen_huella("huella.png"):
+            print("Imagen de huella guardada")
+        else:
+            print("Error al guardar la imagen de la huella")
+    if c == "e":
+        if finger.empty_library() == adafruit_fingerprint.OK:
+            print("¡Librería vacía!")
+        else:
+            print("Error al vaciar la librería")
+    if c == "f":
+        print("Saliendo del programa de ejemplo de huella digital")
+        raise SystemExit
+    print("----------------")
+    if finger.read_templates() != adafruit_fingerprint.OK:
+        raise RuntimeError("No se pudieron leer las plantillas")
+    print("Plantillas de huella: ", finger.templates)
+    if finger.count_templates() != adafruit_fingerprint.OK:
+        raise RuntimeError("No se pudieron leer las plantillas")
+    print("Número de plantillas encontradas: ", finger.template_count)
+    if finger.read_sysparam() != adafruit_fingerprint.OK:
+        raise RuntimeError("No se pudieron obtener los parámetros del sistema")
+    print("Tamaño de la librería de plantillas: ", finger.library_size)
+    print("a) inscribir huella")#Up
+    print("b) Entrar por huella")#Down
+    print("c) eliminar huella")#Left
+    print("d) guardar imagen de huella")#Right
+    print("e) reiniciar librería")
+    print("f) salir")
+    print("----------------")
+    bd = BlueDot()
     c = input("> ")
 
     if c == "a":
@@ -283,33 +303,20 @@ while True:
             time.sleep(2)   # Espera 2 segundos
             led_rojo.off()  # Apaga el LED rojo
     if c == "c":
-    # Limpiamos las entradas del usuario para la nueva secuencia
-        entradas_usuario.clear()
-        print("Ingrese la secuencia de la contraseña usando el Bluedot.")
-        bd.when_pressed = verificar_secuencia
-
-        # Nos mantenemos en un bucle hasta que la verificación de la secuencia haya terminado
-        while True:
-            # Esperamos a que la longitud de las entradas del usuario sea igual a la longitud de la secuencia correcta
-            if len(entradas_usuario) == len(secuencia_correcta):
-                break
-            time.sleep(0.1)
-
-    if c == "d":
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
             print("¡Eliminada!")
         else:
             print("Error al eliminar")
-    if c == "e":
+    if c == "d":
         if guardar_imagen_huella("huella.png"):
             print("Imagen de huella guardada")
         else:
             print("Error al guardar la imagen de la huella")
-    if c == "f":
+    if c == "e":
         if finger.empty_library() == adafruit_fingerprint.OK:
             print("¡Librería vacía!")
         else:
             print("Error al vaciar la librería")
-    if c == "g":
+    if c == "f":
         print("Saliendo del programa de ejemplo de huella digital")
         raise SystemExit
