@@ -15,6 +15,12 @@ finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 # Define la secuencia que se debe seguir
 secuencia_correcta = ["up", "down", "left", "right"]
+direcciones = {
+    "up": "arriba",
+    "down": "abajo",
+    "left": "izquierda",
+    "right": "derecha",
+}
 
 # Inicializa la lista que almacenará las entradas del usuario
 entradas_usuario = []
@@ -212,18 +218,15 @@ def verificar_secuencia(pos):
         # Esperamos a que se complete la secuencia
         if len(entradas_usuario) == len(secuencia_correcta):
             # La secuencia ingresada coincide con la secuencia correcta
-            print("¡Acceso concedido!")
+            print("¡Acceso concedido! Se presionó {} correctamente.".format(direcciones[pos]))
             # Limpia las entradas del usuario para el próximo intento
-            led_verde.on()  # Enciende el LED verde
-            time.sleep(2)   # Espera 2 segundos
-            led_verde.off() # Apaga el LED verde
             entradas_usuario.clear()
     else:
         # La secuencia ingresada no coincide con el prefijo de la secuencia correcta
-        print("Secuencia incorrecta")
-        led_rojo.on()   # Enciende el LED rojo
-        time.sleep(2)   # Espera 2 segundos
-        led_rojo.off()  # Apaga el LED rojo
+        print("Secuencia incorrecta. Se presionó {}.".format(direcciones[pos]))
+        led_rojo.on()
+        time.sleep(2)
+        led_rojo.off()
         entradas_usuario.clear()
 
 while True:
@@ -261,7 +264,7 @@ while True:
             led_rojo.on()   # Enciende el LED rojo
             time.sleep(2)   # Espera 2 segundos
             led_rojo.off()  # Apaga el LED rojo
-    if c == "c":
+    if opcion == "c":
     # Limpiamos las entradas del usuario para la nueva secuencia
         entradas_usuario.clear()
         print("Ingrese la secuencia de la contraseña usando el Bluedot.")
@@ -272,7 +275,7 @@ while True:
             # Esperamos a que la longitud de las entradas del usuario sea igual a la longitud de la secuencia correcta
             if len(entradas_usuario) == len(secuencia_correcta):
                 break
-            time.sleep(0.1)  # Esperamos un poco para evitar un uso excesivo de la CPU
+            time.sleep(0.1)
 
     if c == "d":
         if finger.delete_model(obtener_numero(finger.library_size)) == adafruit_fingerprint.OK:
