@@ -2,15 +2,16 @@ import os
 import time
 import serial
 from gpiozero import LED
-from bluedot import BlueDot
-from signal import pause
+import telebot
 import adafruit_fingerprint
+
+API_TOKEN = 'tu_token_de_bot'
+bot = telebot.TeleBot(API_TOKEN)
 
 led_verde = LED(17)
 led_rojo = LED(27)
 
 uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
-
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 def obtener_huella():
