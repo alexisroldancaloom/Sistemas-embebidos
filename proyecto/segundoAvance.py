@@ -19,16 +19,18 @@ user_state = {}
 def inscribir_huella(chat_id, location=None, step=1):
     if location is not None:
         user_state[chat_id] = {'action': 'inscribir', 'step': step, 'location': location, 'count': 0}
-
-    if user_state[chat_id]['step'] == 1:
-        bot.send_message(chat_id, "Coloque el dedo en el sensor...")
+    
+    if user_state[chat_id]['step'] == 1 or user_state[chat_id]['step'] == 2:
+        message = "Coloque el dedo en el sensor..." if user_state[chat_id]['step'] == 1 else "Coloque el mismo dedo nuevamente."
+        bot.send_message(chat_id, message)
         time.sleep(1)  # Give time for the user to place the finger
         check_finger_presence(chat_id)
 
 def check_finger_presence(chat_id):
     result = finger.get_image()
     if result == adafruit_fingerprint.OK:
-        bot.send_message(chat_id, "Huella tomada. Retire el dedo.")
+        message = "Huella tomada. Retire el dedo." if user_state[chat_id]['step'] == 1 else "Huella tomada nuevamente. Procesando..."
+        bot.send_message(chat_id, message)
         process_image(chat_id)
     elif result == adafruit_fingerprint.NOFINGER:
         # Poll until finger is placed
@@ -39,14 +41,13 @@ def check_finger_presence(chat_id):
         del user_state[chat_id]
 
 def process_image(chat_id):
-    result = finger.image_2_tz(1 + user_state[chat_id]['count'])
+    result = finger.image_2_tz(user_state[chat_id]['step'])
     if result == adafruit_fingerprint.OK:
         user_state[chat_id]['count'] += 1
         if user_state[chat_id]['count'] == 1:
             user_state[chat_id]['step'] = 2
-            bot.send_message(chat_id, "Coloque el mismo dedo nuevamente.")
             time.sleep(1)
-            inscribir_huella(chat_id)
+            inscribir_huella(chat_id, step=2)
         else:
             create_model(chat_id)
     else:
@@ -72,7 +73,6 @@ def store_model(chat_id):
     else:
         bot.send_message(chat_id, "Error al almacenar el modelo.")
     del user_state[chat_id]
-
 # Funciones de manejo de huellas
 
 def obtener_huella():
