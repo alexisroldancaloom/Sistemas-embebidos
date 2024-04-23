@@ -16,7 +16,7 @@ finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 user_state = {}
 
-# Funciones de manejo de huella
+# Funciones de manejo de huellas
 
 def obtener_huella():
     print("Esperando imagen...")
@@ -24,11 +24,13 @@ def obtener_huella():
         pass
     print("Creando plantilla...")
     if finger.image_2_tz(1) != adafruit_fingerprint.OK:
-        return False
+        return False, "Error al crear plantilla."
     print("Buscando...")
-    if finger.finger_search() != adafruit_fingerprint.OK:
-        return False
-    return True
+    result = finger.finger_search()
+    if result[0] == adafruit_fingerprint.OK:
+        return True, f"Huella encontrada con ID {result[1]} y confianza {result[2]}."
+    else:
+        return False, "Huella no encontrada."
 
 def inscribir_huella(location):
     for fingerimg in range(1, 3):
@@ -82,39 +84,50 @@ def eliminar_huella(location):
     else:
         return False
 
-# Comandos del bot
+def resetear_libreria():
+    if finger.empty_library() == adafruit_fingerprint.OK:
+        return True, "Librería reseteada correctamente."
+    else:
+        return False, "Error al resetear la librería."
 
-@bot.message_handler(commands=['start', 'help'])
+def mostrar_huellas():
+    if finger.read_templates() != adafruit_fingerprint.OK:
+        return False, "Error al leer las plantillas."
+    return True, f"Huellas inscritas: {finger.templates}"
+
+# Comandos del bot y menú interactivo
+
+@bot.message_handler(commands=['start', 'menu'])
 def send_welcome(message):
-    bot.reply_to(message, "Bienvenido al bot de gestión de huellas. Use los comandos para interactuar.")
+    menu = ("Bienvenido al gestor de huellas. Elige una opción:\n"
+            "/inscribir - Inscribir nueva huella\n"
+            "/buscar - Buscar una huella\n"
+            "/eliminar - Eliminar una huella\n"
+            "/resetear - Resetear la librería de huellas\n"
+            "/mostrar - Mostrar todas las huellas inscritas\n"
+            "/salir - Salir del bot")
+    bot.reply_to(message, menu)
 
-@bot.message_handler(commands=['inscribir', 'eliminar'])
-def start_process(message):
-    action = message.text.strip('/')
-    user_state[message.chat.id] = {'action': action}
-    bot.send_message(message.chat.id, "Ingrese el ID de ubicación de 0 a {}:".format(finger.library_size - 1))
+@bot.message_handler(commands=['buscar'])
+def buscar_huella(message):
+    success, response = obtener_huella()
+    bot.reply_to(message, response)
 
-@bot.message_handler(func=lambda message: message.chat.id in user_state)
-def handle_number_input(message):
-    chat_id = message.chat.id
-    action = user_state[chat_id]['action']
-    try:
-        location = int(message.text)
-        if location < 0 or location >= finger.library_size:
-            raise ValueError("Número fuera de rango")
-        if action == 'inscribir':
-            if inscribir_huella(location):
-                bot.send_message(chat_id, f"Huella inscrita en la ubicación {location}")
-            else:
-                bot.send_message(chat_id, "Falló al inscribir huella.")
-        elif action == 'eliminar':
-            if eliminar_huella(location):
-                bot.send_message(chat_id, f"Huella eliminada de la ubicación {location}")
-            else:
-                bot.send_message(chat_id, "Falló al eliminar huella.")
-    except ValueError:
-        bot.send_message(chat_id, "Por favor, ingrese un número válido.")
-    finally:
-        del user_state[chat_id]
+@bot.message_handler(commands=['resetear'])
+def resetear(message):
+    success, response = resetear_libreria()
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['mostrar'])
+def mostrar(message):
+    success, response = mostrar_huellas()
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['salir'])
+def salir(message):
+    bot.reply_to(message, "Gracias por usar el bot de gestión de huellas. ¡Hasta pronto!")
+    # Aquí podrías implementar lógica para cerrar la sesión o limpiar recursos si es necesario.
+
+# Lógica similar para los otros comandos
 
 bot.polling()
