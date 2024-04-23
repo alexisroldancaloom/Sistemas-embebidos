@@ -2,6 +2,7 @@ import time
 import board
 import busio
 from digitalio import DigitalInOut, Direction
+import serial
 import adafruit_fingerprint
 import telebot  # Importa la librería de bot de Telegram
 
@@ -12,7 +13,7 @@ bot = telebot.TeleBot(TOKEN)
 led = DigitalInOut(board.D13)
 led.direction = Direction.OUTPUT
 
-uart = busio.UART(board.TX, board.RX, baudrate=57600)
+uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 # Definiciones de funciones para manejar las huellas dactilares
