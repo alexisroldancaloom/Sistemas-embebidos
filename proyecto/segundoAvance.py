@@ -16,6 +16,63 @@ finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 user_state = {}
 
+def inscribir_huella(chat_id, location=None, step=1):
+    if location is not None:
+        user_state[chat_id] = {'action': 'inscribir', 'step': step, 'location': location, 'count': 0}
+
+    if user_state[chat_id]['step'] == 1:
+        bot.send_message(chat_id, "Coloque el dedo en el sensor...")
+        time.sleep(1)  # Give time for the user to place the finger
+        check_finger_presence(chat_id)
+
+def check_finger_presence(chat_id):
+    result = finger.get_image()
+    if result == adafruit_fingerprint.OK:
+        bot.send_message(chat_id, "Huella tomada. Retire el dedo.")
+        process_image(chat_id)
+    elif result == adafruit_fingerprint.NOFINGER:
+        # Poll until finger is placed
+        time.sleep(0.5)
+        check_finger_presence(chat_id)
+    else:
+        bot.send_message(chat_id, "Error de Huella. Intente de nuevo.")
+        del user_state[chat_id]
+
+def process_image(chat_id):
+    result = finger.image_2_tz(1 + user_state[chat_id]['count'])
+    if result == adafruit_fingerprint.OK:
+        user_state[chat_id]['count'] += 1
+        if user_state[chat_id]['count'] == 1:
+            user_state[chat_id]['step'] = 2
+            bot.send_message(chat_id, "Coloque el mismo dedo nuevamente.")
+            time.sleep(1)
+            inscribir_huella(chat_id)
+        else:
+            create_model(chat_id)
+    else:
+        bot.send_message(chat_id, "Error al procesar la huella. Intente de nuevo.")
+        del user_state[chat_id]
+
+def create_model(chat_id):
+    result = finger.create_model()
+    if result == adafruit_fingerprint.OK:
+        store_model(chat_id)
+    else:
+        bot.send_message(chat_id, "Las huellas no coinciden. Intente de nuevo.")
+        del user_state[chat_id]
+
+def store_model(chat_id):
+    location = user_state[chat_id]['location']
+    result = finger.store_model(location)
+    if result == adafruit_fingerprint.OK:
+        bot.send_message(chat_id, f"Modelo almacenado en la posición {location}.")
+        led_verde.on()
+        time.sleep(1)
+        led_verde.off()
+    else:
+        bot.send_message(chat_id, "Error al almacenar el modelo.")
+    del user_state[chat_id]
+
 # Funciones de manejo de huellas
 
 def obtener_huella():
@@ -31,60 +88,6 @@ def obtener_huella():
         return True, f"Huella encontrada con ID {result[1]} y confianza {result[2]}."
     else:
         return False, "Huella no encontrada."
-
-# Función para manejar el estado y el proceso de inscripción
-def inscribir_huella(chat_id, location=None, step=None):
-    if step is None:
-        user_state[chat_id] = {'action': 'inscribir', 'step': 1, 'location': location}
-        bot.send_message(chat_id, "Coloque el dedo en el sensor...")
-    else:
-        if step == 1:
-            i = finger.get_image()
-            if i == adafruit_fingerprint.OK:
-                bot.send_message(chat_id, "Huella tomada. Retire el dedo.")
-                user_state[chat_id]['step'] = 2
-                time.sleep(1)  # Pause for user to remove finger
-                inscribir_huella(chat_id, step=2)
-            elif i == adafruit_fingerprint.NOFINGER:
-                bot.send_message(chat_id, ".", parse_mode='Markdown')
-            elif i == adafruit_fingerprint.IMAGEFAIL:
-                bot.send_message(chat_id, "Error de Huella. Intente de nuevo.")
-                del user_state[chat_id]
-                led_rojo.on()
-                time.sleep(2)
-                led_rojo.off()
-            else:
-                bot.send_message(chat_id, "Error desconocido. Intente de nuevo.")
-                del user_state[chat_id]
-
-        elif step == 2:
-            i = finger.image_2_tz(1)
-            if i == adafruit_fingerprint.OK:
-                if 'count' in user_state[chat_id]:
-                    user_state[chat_id]['count'] += 1
-                else:
-                    user_state[chat_id]['count'] = 1
-
-                if user_state[chat_id]['count'] < 2:
-                    bot.send_message(chat_id, "Coloque el mismo dedo nuevamente.")
-                    user_state[chat_id]['step'] = 1
-                else:
-                    bot.send_message(chat_id, "Creando modelo...")
-                    i = finger.create_model()
-                    if i == adafruit_fingerprint.OK:
-                        i = finger.store_model(location)
-                        if i == adafruit_fingerprint.OK:
-                            bot.send_message(chat_id, f"Modelo almacenado en la posición {location}.")
-                        else:
-                            bot.send_message(chat_id, "Error al almacenar el modelo.")
-                        del user_state[chat_id]
-                        led_verde.off()
-                    else:
-                        bot.send_message(chat_id, "Las huellas no coinciden. Intente de nuevo.")
-                        del user_state[chat_id]
-            else:
-                bot.send_message(chat_id, "Error al procesar la huella. Intente de nuevo.")
-                del user_state[chat_id]
 
 def eliminar_huella(location):
     if finger.delete_model(location) == adafruit_fingerprint.OK:
@@ -121,7 +124,7 @@ def command_inscribir(message):
     bot.send_message(message.chat.id, "Ingrese el ID de ubicación de 0 a {}:".format(finger.library_size - 1))
     user_state[message.chat.id] = {'action': 'get_location'}
 
-@bot.message_handler(func=lambda message: message.chat.id in user_state and user_state[message.chat.id].get('action') == 'get_location')
+@bot.message_handler(func=lambda message: message.chat.id in user_state and user_state[message.chat.id]['action'] == 'get_location')
 def handle_location_input(message):
     try:
         location = int(message.text)
@@ -130,6 +133,7 @@ def handle_location_input(message):
         inscribir_huella(message.chat.id, location=location)
     except ValueError:
         bot.send_message(message.chat.id, "Por favor, ingrese un número válido.")
+
 
 
 @bot.message_handler(commands=['buscar'])
