@@ -5,7 +5,7 @@ from gpiozero import LED
 import telebot
 import adafruit_fingerprint
 
-API_TOKEN = 'tu_token_de_bot'
+API_TOKEN = '6889397382:AAFaH9-seJUD0x1exdYDEuUnb23onnUAMV0'
 bot = telebot.TeleBot(API_TOKEN)
 
 led_verde = LED(17)
