@@ -84,8 +84,10 @@ def obtener_huella():
         return False, "Error al crear plantilla."
     print("Buscando...")
     result = finger.finger_search()
-    if result[0] == adafruit_fingerprint.OK:
-        return True, f"Huella encontrada con ID {result[1]} y confianza {result[2]}."
+    if result == adafruit_fingerprint.OK:
+        # Si la búsqueda fue exitosa, ahora necesitamos acceder a la ID de la huella y la confianza
+        # Estos datos se encuentran en `finger.finger_id` y `finger.confidence` respectivamente.
+        return True, f"Huella encontrada con ID {finger.finger_id} y confianza {finger.confidence}."
     else:
         return False, "Huella no encontrada."
 
