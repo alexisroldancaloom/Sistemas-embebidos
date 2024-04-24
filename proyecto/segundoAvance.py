@@ -1,7 +1,7 @@
 import os
 import time
 import serial
-from gpiozero import LED
+from gpiozero import LED, DistanceSensor
 import telebot
 import adafruit_fingerprint
 
@@ -10,11 +10,27 @@ bot = telebot.TeleBot(API_TOKEN)
 
 led_verde = LED(17)
 led_rojo = LED(27)
+sensor_distancia = DistanceSensor(echo=18, trigger=23)  #  GPIO 18 y 23 para echo y trigger
 
 uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 user_state = {}
+
+# Proximidad
+def check_proximity():
+    while True:
+        distancia = sensor_distancia.distance * 100  
+        if distancia < 20:  # Distancia en centímetros
+            led_rojo.on()
+            time.sleep(1)  
+            led_rojo.off()
+        time.sleep(1)  
+
+import threading
+threading.Thread(target=check_proximity, daemon=True).start()
+
+# Huellas
 
 def inscribir_huella(chat_id, location=None, step=1):
     if location is not None:
@@ -23,7 +39,7 @@ def inscribir_huella(chat_id, location=None, step=1):
     if user_state[chat_id]['step'] == 1 or user_state[chat_id]['step'] == 2:
         message = "Coloque el dedo en el sensor..." if user_state[chat_id]['step'] == 1 else "Coloque el mismo dedo nuevamente."
         bot.send_message(chat_id, message)
-        time.sleep(1)  # Give time for the user to place the finger
+        time.sleep(1)  # Dar tiempo al usuario para colocar el dedo
         check_finger_presence(chat_id)
 
 def check_finger_presence(chat_id):
@@ -73,8 +89,8 @@ def store_model(chat_id):
     else:
         bot.send_message(chat_id, "Error al almacenar el modelo.")
     del user_state[chat_id]
-# Funciones de manejo de huellas
 
+# Funciones de manejo de huellas
 def obtener_huella():
     print("Esperando imagen...")
     while finger.get_image() != adafruit_fingerprint.OK:
@@ -86,7 +102,6 @@ def obtener_huella():
     result = finger.finger_search()
     if result == adafruit_fingerprint.OK:
         # Si la búsqueda fue exitosa, ahora necesitamos acceder a la ID de la huella y la confianza
-        # Estos datos se encuentran en `finger.finger_id` y `finger.confidence` respectivamente.
         return True, f"Huella encontrada con ID {finger.finger_id} y confianza {finger.confidence}."
     else:
         return False, "Huella no encontrada."
@@ -156,8 +171,6 @@ def mostrar(message):
 @bot.message_handler(commands=['salir'])
 def salir(message):
     bot.reply_to(message, "Gracias por usar el bot de gestión de huellas. ¡Hasta pronto!")
-    # Aquí podrías implementar lógica para cerrar la sesión o limpiar recursos si es necesario.
-
-# Lógica similar para los otros comandos
+    
 
 bot.polling()
