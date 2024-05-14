@@ -8,9 +8,9 @@ GPIO.setup(17, GPIO.OUT)
 # Función para activar la cerradura
 def activar_cerradura():
     GPIO.output(17, True)  # Enciende el relevador
-    time.sleep(5)          # Mantiene la cerradura abierta por 5 segundos
+    time.sleep(2)          # Mantiene la cerradura abierta por 5 segundos
     GPIO.output(17, False) # Apaga el relevador
-    time.sleep(5)          # Espera 5 segundos
+    time.sleep(2)          # Espera 5 segundos
 
 try:
     while True:
